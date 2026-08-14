@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common'
 import { TwitterModule } from '../twitter/twitter.module'
+import { SignalModule } from '../signal/signal.module'
+import { TriggerModule } from '../trigger/trigger.module'
+import { EventModule } from '../event/event.module'
 import { MonitorController } from './monitor.controller'
 import { MonitorService } from './monitor.service'
 
 @Module({
-  imports: [TwitterModule],
+  imports: [TwitterModule, SignalModule, TriggerModule, EventModule],
   controllers: [MonitorController],
   providers: [MonitorService],
 })

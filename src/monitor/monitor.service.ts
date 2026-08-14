@@ -1,6 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { PrismaService } from '../prisma/prisma.service'
+import { EventService } from '../event/event.service'
+import { SignalService } from '../signal/signal.service'
+import type { RawSignal } from '../signal/signal.types'
+import { TriggerService } from '../trigger/trigger.service'
 import { TwitterService } from '../twitter/twitter.service'
 import { TrendingQueryDto } from './dto/trending-query.dto'
 import type { TrendingResponse } from './interfaces/trending.interface'
@@ -29,6 +33,9 @@ export class MonitorService implements OnModuleInit {
   constructor(
     private readonly twitterService: TwitterService,
     private readonly prisma: PrismaService,
+    private readonly signalService: SignalService,
+    private readonly triggerService: TriggerService,
+    private readonly eventService: EventService,
   ) {}
 
   // 服务启动时先采集一次，避免数据库为空
@@ -44,6 +51,9 @@ export class MonitorService implements OnModuleInit {
 
   /** 拉取各地区的真实热搜并写入数据库（只存真实数据，跳过模拟回退） */
   async collectTrends(): Promise<void> {
+    // 一次完整采集共享一个快照 ID，用于信号去重和后续跨区归并
+    const snapshotId = `snap_${Date.now()}`
+
     await Promise.all(
       REGIONS.map(async (region) => {
         const woeid = REGION_WOEID[region] ?? 1
@@ -55,6 +65,8 @@ export class MonitorService implements OnModuleInit {
           }
 
           const collectedAt = new Date()
+
+          // 榜单快照（热搜排行榜展示）
           await this.prisma.trendingRecord.createMany({
             data: trends.map((t, i) => ({
               region,
@@ -65,12 +77,39 @@ export class MonitorService implements OnModuleInit {
               collectedAt,
             })),
           })
-          this.logger.log(`地区 ${region} 已采集 ${trends.length} 条热搜并写入数据库`)
+
+          // 原始信号（事件形成流水线）
+          const signals: RawSignal[] = trends.map((t, i) => ({
+            source: 'x-trending',
+            sourceItemId: `${region}:${t.name}`,
+            region,
+            title: t.name,
+            url: t.url,
+            rank: i + 1,
+            snapshotId,
+            collectedAt,
+            extra: { query: t.query },
+          }))
+          const ingested = await this.signalService.ingest(signals)
+
+          this.logger.log(
+            `地区 ${region} 已采集 ${trends.length} 条热搜（信号 ${ingested} 条）并写入数据库`,
+          )
         } catch (error) {
           this.logger.error(`地区 ${region} 采集异常: ${(error as Error).message}`)
         }
       }),
     )
+
+    // 5 个地区快照都到齐后，聚合触发判断一次
+    const triggered = await this.triggerService.evaluate(snapshotId)
+    if (triggered > 0) {
+      this.logger.log(`本次采集命中 ${triggered} 条触发信号`)
+      // 触发后立即形成事件（批量 LLM + embedding 去重）
+      await this.eventService.formEvents(snapshotId)
+      // 关联召回（向量召回 + LLM 判断 ≤3 历史 Event）
+      await this.eventService.relateEvents(snapshotId)
+    }
   }
 
   /** 前端查询：直接读数据库里该地区最近一次快照 */

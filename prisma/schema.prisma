@@ -18,3 +18,74 @@ model TrendingRecord {
 
   @@index([region, collectedAt])
 }
+
+model Signal {
+  id           String   @id @default(cuid())
+  source       String
+  sourceItemId String
+  region       String?
+  title        String
+  summaryText  String?
+  url          String?
+  rank         Int?
+  previousRank Int?
+  snapshotId   String?
+  trigger      String?
+  extra        Json?
+  collectedAt  DateTime
+  eventId      String?
+  event        Event?   @relation(fields: [eventId], references: [id])
+
+  @@unique([source, sourceItemId, snapshotId])
+  @@index([collectedAt])
+}
+
+model Event {
+  id                String   @id @default(cuid())
+  title             String
+  summary           String
+  coreFact          String
+  coreFactEmbedding Unsupported("vector(1536)")?
+  verify            String
+  status            String
+  regions           Json
+  trigger           String
+  rank              Int?
+  rankChange        Int?
+  firstDiscoveredAt DateTime
+  updatedAt         DateTime @updatedAt
+
+  signals            Signal[]
+  evidence           Evidence[]
+  outgoingRelations  EventRelation[] @relation("outgoing")
+  incomingRelations  EventRelation[] @relation("incoming")
+
+  @@index([coreFact])
+  @@index([firstDiscoveredAt])
+}
+
+model Evidence {
+  id      String  @id @default(cuid())
+  eventId String
+  region  String?
+  url     String
+  snippet String?
+  order   Int
+  event   Event   @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+}
+
+model EventRelation {
+  id           String @id @default(cuid())
+  fromEventId  String
+  toEventId    String
+  relationType String
+
+  from Event @relation("outgoing", fields: [fromEventId], references: [id])
+  to   Event @relation("incoming", fields: [toEventId], references: [id])
+
+  @@unique([fromEventId, toEventId, relationType])
+  @@index([fromEventId])
+  @@index([toEventId])
+}

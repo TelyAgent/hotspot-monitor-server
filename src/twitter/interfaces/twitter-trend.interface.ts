@@ -11,3 +11,22 @@ export interface TrendsResult {
   trends: TwitterTrend[]
   source: TrendSource
 }
+
+export interface TweetAuthor {
+  id?: string
+  userName?: string
+  name?: string
+  followers?: number
+}
+
+export interface Tweet {
+  id: string
+  url: string
+  text: string
+  retweetCount?: number
+  replyCount?: number
+  likeCount?: number
+  viewCount?: number
+  createdAt?: string
+  author?: TweetAuthor
+}

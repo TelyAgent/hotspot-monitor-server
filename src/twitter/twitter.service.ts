@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { TrendsResult, TwitterTrend } from './interfaces/twitter-trend.interface'
+import type { TrendsResult, Tweet, TwitterTrend } from './interfaces/twitter-trend.interface'
 
 // 第三方热搜接口 twitterapi.io：GET /twitter/trends?woeid={woeid}&count={count}
 // 鉴权：X-API-Key 请求头
@@ -121,6 +121,56 @@ export class TwitterService {
       const message = error instanceof Error ? error.message : String(error)
       this.logger.warn(`获取热搜失败（woeid=${woeid}），回退到模拟数据: ${message}`)
       return { trends: MOCK_TRENDS.slice(0, limit), source: 'mock' }
+    }
+  }
+
+  /**
+   * 获取某个搜索词在 X「Top」排序下的热门帖子（用于事实依据）。
+   * 对应 twitterapi.io 的 GET /twitter/tweet/advanced_search
+   */
+  async getTopPosts(keyword: string, count = 3): Promise<Tweet[]> {
+    if (!this.apiKey) {
+      throw new Error('TWITTERAPI_IO_KEY 未配置，无法获取帖子')
+    }
+
+    const url = `${TWITTERAPI_BASE}/twitter/tweet/advanced_search?query=${encodeURIComponent(
+      keyword,
+    )}&queryType=Top`
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15_000)
+
+    try {
+      const response = await fetch(url, {
+        headers: { 'X-API-Key': this.apiKey },
+        signal: controller.signal,
+      })
+
+      if (!response.ok) {
+        const text = await response.text()
+        throw new Error(
+          `twitterapi.io 帖子接口返回 ${response.status}: ${text.slice(0, 200)}`,
+        )
+      }
+
+      const body = (await response.json()) as {
+        tweets?: Tweet[]
+        status?: string
+        msg?: string
+      }
+
+      if (body.status === 'error') {
+        throw new Error(`twitterapi.io 帖子接口错误: ${body.msg || '未知错误'}`)
+      }
+
+      return (body.tweets ?? []).slice(0, count)
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`帖子接口超时: ${keyword}`)
+      }
+      throw error
+    } finally {
+      clearTimeout(timer)
     }
   }
 }
