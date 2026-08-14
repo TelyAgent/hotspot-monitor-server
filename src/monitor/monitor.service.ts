@@ -1,0 +1,120 @@
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Cron, CronExpression } from '@nestjs/schedule'
+import { PrismaService } from '../prisma/prisma.service'
+import { TwitterService } from '../twitter/twitter.service'
+import { TrendingQueryDto } from './dto/trending-query.dto'
+import type { TrendingResponse } from './interfaces/trending.interface'
+
+const REGIONS = [
+  'Worldwide',
+  'United States',
+  'United Kingdom',
+  'Japan',
+  'Korea',
+] as const
+
+// 前端地区 → Twitter WOEID（Where On Earth ID）
+const REGION_WOEID: Record<string, number> = {
+  Worldwide: 1,
+  'United States': 23424977,
+  'United Kingdom': 23424975,
+  Japan: 23424856,
+  Korea: 23424868,
+}
+
+@Injectable()
+export class MonitorService implements OnModuleInit {
+  private readonly logger = new Logger(MonitorService.name)
+
+  constructor(
+    private readonly twitterService: TwitterService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  // 服务启动时先采集一次，避免数据库为空
+  onModuleInit() {
+    void this.collectTrends()
+  }
+
+  // 每小时整点自动刷新一次
+  @Cron(CronExpression.EVERY_HOUR)
+  async collectTrendsScheduled() {
+    await this.collectTrends()
+  }
+
+  /** 拉取各地区的真实热搜并写入数据库（只存真实数据，跳过模拟回退） */
+  async collectTrends(): Promise<void> {
+    await Promise.all(
+      REGIONS.map(async (region) => {
+        const woeid = REGION_WOEID[region] ?? 1
+        try {
+          const { trends, source } = await this.twitterService.getTrends(woeid, 30)
+          if (source !== 'twitter') {
+            this.logger.warn(`地区 ${region} 采集失败（回退模拟数据），跳过写入数据库`)
+            return
+          }
+
+          const collectedAt = new Date()
+          await this.prisma.trendingRecord.createMany({
+            data: trends.map((t, i) => ({
+              region,
+              rank: i + 1,
+              name: t.name,
+              query: t.query,
+              url: t.url,
+              collectedAt,
+            })),
+          })
+          this.logger.log(`地区 ${region} 已采集 ${trends.length} 条热搜并写入数据库`)
+        } catch (error) {
+          this.logger.error(`地区 ${region} 采集异常: ${(error as Error).message}`)
+        }
+      }),
+    )
+  }
+
+  /** 前端查询：直接读数据库里该地区最近一次快照 */
+  async getTrending(query: TrendingQueryDto): Promise<TrendingResponse> {
+    const { region, limit } = query
+
+    const latest = await this.prisma.trendingRecord.findFirst({
+      where: { region },
+      orderBy: { collectedAt: 'desc' },
+      select: { collectedAt: true },
+    })
+
+    if (!latest) {
+      return {
+        region,
+        collectedAt: new Date().toISOString(),
+        source: 'twitter',
+        items: [],
+      }
+    }
+
+    const records = await this.prisma.trendingRecord.findMany({
+      where: { region, collectedAt: latest.collectedAt },
+      orderBy: { rank: 'asc' },
+      take: limit,
+    })
+
+    return {
+      region,
+      collectedAt: latest.collectedAt.toISOString(),
+      source: 'twitter',
+      items: records.map((r) => ({
+        rank: r.rank,
+        name: r.name,
+        query: r.query,
+        url: r.url,
+        heat: '—',
+      })),
+    }
+  }
+
+  /** 手动刷新（对应「立即采集」按钮） */
+  async refresh() {
+    await this.collectTrends()
+    return { status: 'ok', message: '已重新采集各地区的热搜' }
+  }
+}
