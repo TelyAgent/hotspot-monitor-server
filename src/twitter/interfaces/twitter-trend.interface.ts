@@ -30,3 +30,11 @@ export interface Tweet {
   createdAt?: string
   author?: TweetAuthor
 }
+
+export interface TweetMetrics {
+  views: number | null
+  likes: number | null
+  replies: number | null
+  reposts: number | null
+  quotes: number | null
+}

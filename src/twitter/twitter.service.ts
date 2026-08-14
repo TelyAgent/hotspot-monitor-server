@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { TrendsResult, Tweet, TwitterTrend } from './interfaces/twitter-trend.interface'
+import type { TrendsResult, Tweet, TweetMetrics, TwitterTrend } from './interfaces/twitter-trend.interface'
 
 // 第三方热搜接口 twitterapi.io：GET /twitter/trends?woeid={woeid}&count={count}
 // 鉴权：X-API-Key 请求头
@@ -171,6 +171,49 @@ export class TwitterService {
       throw error
     } finally {
       clearTimeout(timer)
+    }
+  }
+
+  /** 获取单条帖子的指标（浏览量/点赞/回复/转发/引用） */
+  async getTweetMetrics(tweetId: string): Promise<TweetMetrics> {
+    if (!this.apiKey) {
+      throw new Error('TWITTERAPI_IO_KEY 未配置，无法获取帖子指标')
+    }
+
+    const url = `${TWITTERAPI_BASE}/twitter/tweets?tweet_ids=${tweetId}`
+    const response = await fetch(url, { headers: { 'X-API-Key': this.apiKey } })
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(
+        `twitterapi.io 帖子详情返回 ${response.status}: ${text.slice(0, 200)}`,
+      )
+    }
+
+    const body = (await response.json()) as {
+      tweets?: Array<{
+        viewCount?: number
+        likeCount?: number
+        replyCount?: number
+        retweetCount?: number
+        quoteCount?: number
+      }>
+      status?: string
+    }
+
+    if (body.status === 'error') {
+      throw new Error('twitterapi.io 帖子详情错误')
+    }
+
+    const tweet = body.tweets?.[0]
+    if (!tweet) throw new Error('帖子不存在或已删除')
+
+    return {
+      views: tweet.viewCount ?? null,
+      likes: tweet.likeCount ?? null,
+      replies: tweet.replyCount ?? null,
+      reposts: tweet.retweetCount ?? null,
+      quotes: tweet.quoteCount ?? null,
     }
   }
 }

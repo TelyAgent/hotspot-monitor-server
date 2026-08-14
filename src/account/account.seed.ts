@@ -57,8 +57,8 @@ const TYPES: Array<{
     persona: '低频、二阶洞察；适合机制、激励、指标误读与持久性观点',
     takesAllEvents: false,
     accounts: [
-      { id: 'nick-preszler', name: 'Nick Preszler' },
-      { id: 'nick-preszler-2', name: 'Nick Preszler 副号' },
+      // { id: 'nick-preszler', name: 'Nick Preszler' },
+      { id: '@Jasonsu711', name: 'Jason Su' }
     ],
   },
   {
@@ -67,10 +67,7 @@ const TYPES: Array<{
     skill: 'manifold-markets-content-operator',
     persona: '社区原生预测市场品牌；适合把未决事件转成概率问题',
     takesAllEvents: false,
-    accounts: [
-      { id: 'manifold-markets', name: 'Manifold Markets' },
-      { id: 'manifold-markets-2', name: 'Manifold Markets 副号' },
-    ],
+    accounts: [{ id: 'manifold-markets', name: 'Manifold Markets' }],
   },
   {
     type: 'WatcherGuru',
@@ -78,10 +75,7 @@ const TYPES: Array<{
     skill: 'watcherguru-content-operator',
     persona: '标准化高速快讯台；适合金融、加密、政策和机构性突发',
     takesAllEvents: false,
-    accounts: [
-      { id: 'watcher-guru', name: 'WatcherGuru' },
-      { id: 'watcher-guru-2', name: 'WatcherGuru 副号' },
-    ],
+    accounts: [{ id: 'watcher-guru', name: 'WatcherGuru' }],
   },
   {
     type: 'RohOnChain',
@@ -89,10 +83,7 @@ const TYPES: Array<{
     skill: 'roh-onchain-content-operator',
     persona: '可收藏的教育型内容；适合工具、课程、研究和趋势拆解',
     takesAllEvents: false,
-    accounts: [
-      { id: 'roh-onchain', name: 'RohOnChain' },
-      { id: 'roh-onchain-2', name: 'RohOnChain 副号' },
-    ],
+    accounts: [{ id: 'roh-onchain', name: 'RohOnChain' }],
   },
   {
     type: 'Unusual Whales',
@@ -100,10 +91,7 @@ const TYPES: Array<{
     skill: 'unusual-whales-content-operator',
     persona: '资金与权力雷达；适合金额、利益和后果',
     takesAllEvents: false,
-    accounts: [
-      { id: 'unusual-whales', name: 'Unusual Whales' },
-      { id: 'unusual-whales-2', name: 'Unusual Whales 副号' },
-    ],
+    accounts: [{ id: 'unusual-whales', name: 'Unusual Whales' }],
   },
   {
     type: 'Daily Loud',
@@ -111,10 +99,7 @@ const TYPES: Array<{
     skill: 'daily-loud-content-operator',
     persona: '视觉优先的娱乐文化资讯',
     takesAllEvents: false,
-    accounts: [
-      { id: 'daily-loud', name: 'Daily Loud' },
-      { id: 'daily-loud-2', name: 'Daily Loud 副号' },
-    ],
+    accounts: [{ id: 'daily-loud', name: 'Daily Loud' }],
   },
   {
     type: 'Pubity',
@@ -122,10 +107,7 @@ const TYPES: Array<{
     skill: 'pubity-content-operator',
     persona: '大众化、积极、可分享',
     takesAllEvents: false,
-    accounts: [
-      { id: 'pubity', name: 'Pubity' },
-      { id: 'pubity-2', name: 'Pubity 副号' },
-    ],
+    accounts: [{ id: 'pubity', name: 'Pubity' }],
   },
   {
     type: 'Nate Silver',
@@ -133,10 +115,7 @@ const TYPES: Array<{
     skill: 'nate-silver-content-operator',
     persona: '概率校准、基准比较、激励分析和可证伪结论',
     takesAllEvents: false,
-    accounts: [
-      { id: 'nate-silver', name: 'Nate Silver' },
-      { id: 'nate-silver-2', name: 'Nate Silver 副号' },
-    ],
+    accounts: [{ id: 'nate-silver', name: 'Nate Silver' }],
   },
   {
     type: 'Domer',
@@ -144,10 +123,7 @@ const TYPES: Array<{
     skill: 'domer-content-operator',
     persona: '低频高信号的预测市场调查',
     takesAllEvents: false,
-    accounts: [
-      { id: 'domer', name: 'Domer' },
-      { id: 'domer-2', name: 'Domer 副号' },
-    ],
+    accounts: [{ id: 'domer', name: 'Domer' }],
   },
 ]
 

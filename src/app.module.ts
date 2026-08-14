@@ -9,6 +9,7 @@ import { EmbeddingModule } from './embedding/embedding.module'
 import { MonitorModule } from './monitor/monitor.module'
 import { AccountModule } from './account/account.module'
 import { TaskModule } from './task/task.module'
+import { InsightsModule } from './insights/insights.module'
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TaskModule } from './task/task.module'
     EmbeddingModule,
     AccountModule,
     TaskModule,
+    InsightsModule,
     MonitorModule,
   ],
   controllers: [AppController],

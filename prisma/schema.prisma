@@ -120,9 +120,43 @@ model Task {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  event   Event   @relation(fields: [eventId], references: [id])
-  account Account @relation(fields: [accountId], references: [id])
+  event   Event         @relation(fields: [eventId], references: [id])
+  account Account       @relation(fields: [accountId], references: [id])
+  post    PublishedPost?
 
   @@unique([eventId, accountId])
   @@index([status])
+}
+
+model PublishedPost {
+  id                String   @id @default(cuid())
+  taskId            String   @unique
+  url               String   @unique
+  publishedAt       DateTime
+  selectedCandidate Int?
+  trackingStatus    String   @default("追踪中")
+  trackingEndsAt    DateTime
+  wellPerforming    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  task    Task         @relation(fields: [taskId], references: [id])
+  metrics PostMetric[]
+
+  @@index([publishedAt])
+  @@index([trackingStatus])
+}
+
+model PostMetric {
+  id         String        @id @default(cuid())
+  postId     String
+  views      Int?
+  likes      Int?
+  replies    Int?
+  reposts    Int?
+  quotes     Int?
+  capturedAt DateTime
+  post       PublishedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, capturedAt])
 }

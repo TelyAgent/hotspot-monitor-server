@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { LlmService } from '../llm/llm.service'
 import type { Account, Event } from '@prisma/client'
@@ -252,6 +252,39 @@ export class TaskService {
     return candidates
   }
 
+  /** 回填发布 URL，创建发布记录并启动追踪 */
+  async publishTask(taskId: string, url: string, selectedCandidate?: number) {
+    const trimmed = url.trim()
+    if (!isValidXPostUrl(trimmed)) {
+      throw new BadRequestException('URL 格式错误，请输入有效的 X 帖子链接')
+    }
+
+    const duplicate = await this.prisma.publishedPost.findUnique({
+      where: { url: trimmed },
+    })
+    if (duplicate) {
+      throw new BadRequestException('该 URL 已被其他任务使用')
+    }
+
+    const post = await this.prisma.publishedPost.create({
+      data: {
+        taskId,
+        url: trimmed,
+        publishedAt: new Date(),
+        selectedCandidate: selectedCandidate ?? null,
+        trackingStatus: '追踪中',
+        trackingEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    })
+
+    await this.prisma.task.update({
+      where: { id: taskId },
+      data: { status: '已完成' },
+    })
+
+    return post
+  }
+
   private async generateSingleCandidates(
     task: { account: Account; event: Event },
     instruction?: string,
@@ -281,4 +314,8 @@ function formatTime(d: Date): string {
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${hh}:${mm}`
+}
+
+function isValidXPostUrl(url: string): boolean {
+  return /^https?:\/\/(x\.com|twitter\.com)\/[^/]+\/status\/\d+/i.test(url)
 }
