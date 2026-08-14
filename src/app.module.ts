@@ -7,6 +7,8 @@ import { PrismaModule } from './prisma/prisma.module'
 import { LlmModule } from './llm/llm.module'
 import { EmbeddingModule } from './embedding/embedding.module'
 import { MonitorModule } from './monitor/monitor.module'
+import { AccountModule } from './account/account.module'
+import { TaskModule } from './task/task.module'
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { MonitorModule } from './monitor/monitor.module'
     PrismaModule,
     LlmModule,
     EmbeddingModule,
+    AccountModule,
+    TaskModule,
     MonitorModule,
   ],
   controllers: [AppController],

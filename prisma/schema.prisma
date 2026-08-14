@@ -59,6 +59,7 @@ model Event {
   evidence           Evidence[]
   outgoingRelations  EventRelation[] @relation("outgoing")
   incomingRelations  EventRelation[] @relation("incoming")
+  tasks              Task[]
 
   @@index([coreFact])
   @@index([firstDiscoveredAt])
@@ -88,4 +89,40 @@ model EventRelation {
   @@unique([fromEventId, toEventId, relationType])
   @@index([fromEventId])
   @@index([toEventId])
+}
+
+model Account {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  type           String
+  layer          String
+  skill          String
+  persona        String?
+  xHandle        String?
+  takesAllEvents Boolean  @default(false)
+  status         String   @default("正常")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tasks          Task[]
+
+  @@index([type])
+  @@index([layer])
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  code       String
+  eventId    String
+  accountId  String
+  status     String   @default("生成中")
+  risk       String   @default("普通")
+  candidates Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  event   Event   @relation(fields: [eventId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([eventId, accountId])
+  @@index([status])
 }

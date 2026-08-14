@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { EventService } from '../event/event.service'
 import { SignalService } from '../signal/signal.service'
 import type { RawSignal } from '../signal/signal.types'
+import { TaskService } from '../task/task.service'
 import { TriggerService } from '../trigger/trigger.service'
 import { TwitterService } from '../twitter/twitter.service'
 import { TrendingQueryDto } from './dto/trending-query.dto'
@@ -36,6 +37,7 @@ export class MonitorService implements OnModuleInit {
     private readonly signalService: SignalService,
     private readonly triggerService: TriggerService,
     private readonly eventService: EventService,
+    private readonly taskService: TaskService,
   ) {}
 
   // 服务启动时先采集一次，避免数据库为空
@@ -105,10 +107,22 @@ export class MonitorService implements OnModuleInit {
     const triggered = await this.triggerService.evaluate(snapshotId)
     if (triggered > 0) {
       this.logger.log(`本次采集命中 ${triggered} 条触发信号`)
-      // 触发后立即形成事件（批量 LLM + embedding 去重）
+      // 事件形成 → 关联 → 任务分配 → 候选生成：异步后台执行，不阻塞采集返回
+      void this.runEventPipeline(snapshotId)
+    }
+  }
+
+  /** 事件流水线：形成/关联/分配/生成，异步后台执行（避免阻塞采集接口） */
+  private async runEventPipeline(snapshotId: string): Promise<void> {
+    try {
       await this.eventService.formEvents(snapshotId)
-      // 关联召回（向量召回 + LLM 判断 ≤3 历史 Event）
       await this.eventService.relateEvents(snapshotId)
+      await this.taskService.assignAndGenerate(snapshotId)
+      this.logger.log(`事件流水线完成（快照 ${snapshotId}）`)
+    } catch (error) {
+      this.logger.error(
+        `事件流水线失败（快照 ${snapshotId}）: ${(error as Error).message}`,
+      )
     }
   }
 
@@ -154,6 +168,6 @@ export class MonitorService implements OnModuleInit {
   /** 手动刷新（对应「立即采集」按钮） */
   async refresh() {
     await this.collectTrends()
-    return { status: 'ok', message: '已重新采集各地区的热搜' }
+    return { status: 'ok', message: '已重新采集各地区的热搜，事件处理在后台进行' }
   }
 }
