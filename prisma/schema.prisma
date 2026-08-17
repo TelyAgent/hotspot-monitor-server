@@ -30,6 +30,51 @@ model TrendFetchLog {
   @@index([region, fetchedAt])
 }
 
+model TopicCirclePost {
+  id           String   @id @default(cuid())
+  postId       String   @unique
+  circle       String
+  handle       String
+  text         String
+  url          String?
+  viewCount    Int?
+  retweetCount Int?
+  replyCount   Int?
+  likeCount    Int?
+  postedAt     DateTime
+  collectedAt  DateTime @default(now())
+
+  @@index([circle, postedAt])
+  @@index([handle, postedAt])
+}
+
+model TopicCircleSyncState {
+  handle          String   @id
+  lastCollectedAt DateTime
+  updatedAt       DateTime @updatedAt
+}
+
+model TopicCircleTopic {
+  id                String    @id @default(cuid())
+  circle            String
+  title             String
+  summary           String
+  coreFact          String
+  coreFactEmbedding Unsupported("vector(1536)")?
+  postIds           Json
+  b3h               Int       @default(0)
+  b24h              Int       @default(0)
+  tmax              Float?
+  tmaxTop5          Boolean   @default(false)
+  eventId           String?
+  triggeredAt       DateTime?
+  triggerType       String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([circle, createdAt])
+}
+
 model Signal {
   id           String   @id @default(cuid())
   source       String
@@ -209,6 +254,7 @@ model Topic {
   positiveExamples String?
   negativeExamples String?
   action           String?
+  accounts         String?
   enabled          Boolean  @default(true)
   fields           Json?
   createdAt        DateTime @default(now())

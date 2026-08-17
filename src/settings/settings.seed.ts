@@ -70,40 +70,39 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
 
   topics: [
     {
-      name: 'AI',
-      description: '语义词与示例Event',
+      name: '政治与选举',
+      description: '英语世界政治为主，重点覆盖美国选举与全球重大政治事件',
       enabled: true,
-      keywords: 'GPT, OpenAI, Claude, Kimi, AI model',
-      positiveExamples: 'GPT-6发布；Kimi开源新模型',
-      negativeExamples: '仅出现字母AI但无行业含义',
-      action: '立即自动响应',
+      accounts:
+        '@Reuters\n@AP\n@CNNPolitics\n@POLITICO\n@axios\n@thehill\n@nprpolitics\n@BBCWorld\n@DecisionDeskHQ\n@NateSilver538',
     },
     {
-      name: '预测市场',
-      description: '语义词与示例Event',
+      name: 'Crypto 与 Web3',
+      description: '加密与 Web3 行业动态',
       enabled: true,
-      keywords: 'prediction market, 预测市场, Polymarket',
-      positiveExamples: 'Polymarket上线新市场',
-      negativeExamples: '与预测市场无关的普通讨论',
-      action: '立即自动响应',
+      accounts:
+        '@CoinDesk\n@Cointelegraph\n@crypto\n@WuBlockchain\n@tier10k\n@WatcherGuru\n@lookonchain\n@BitcoinMagazine\n@DecryptMedia\n@DefiLlama',
     },
     {
-      name: '加密监管',
-      description: '语义词与示例Event',
+      name: 'AI 与科技',
+      description: 'AI 与科技行业动态',
       enabled: true,
-      keywords: 'crypto regulation, 加密监管, SEC, 监管政策',
-      positiveExamples: 'SEC新规发布',
-      negativeExamples: '仅讨论币价波动',
-      action: '立即自动响应',
+      accounts:
+        '@OpenAI\n@AnthropicAI\n@GoogleDeepMind\n@AIatMeta\n@huggingface\n@AndrewYNg\n@karpathy\n@TechCrunch\n@verge\n@WIRED',
     },
     {
-      name: '体育大赛',
-      description: '语义词与示例Event',
+      name: '宏观经济与金融',
+      description: '宏观数据、政策与金融市场',
       enabled: true,
-      keywords: '世界杯, NBA, 欧冠, 体育赛事',
-      positiveExamples: '世界杯赛程公布',
-      negativeExamples: '普通比赛结果闲聊',
-      action: '立即自动响应',
+      accounts:
+        '@business\n@ReutersBiz\n@CNBC\n@FinancialTimes\n@WSJ\n@TheEconomist\n@federalreserve\n@BLS_gov\n@KobeissiLetter\n@DeItaone',
+    },
+    {
+      name: '预测市场行业',
+      description: '预测市场平台产品、监管、融资与市场动态',
+      enabled: true,
+      accounts:
+        '@Polymarket\n@Kalshi\n@PolymarketIntel\n@OpinionLabsXYZ\n@MyriadMarkets\n@PredictIt\n@ZeitgeistPM\n@PredictInsights\n@ManifoldMarkets\n@metaculus',
     },
   ],
 
@@ -335,3 +334,5 @@ export const SEED_SETTING_AUDIT: [string, string, string, string][] = [
   ['两个Signal', '合并', '运营负责人', 'EV-1841'],
   ['追踪规则', '生效', '系统', 'v2.4'],
 ]
+
+// 主题圈（topics）：关注账号由 settings 配置，主题圈雷达读取

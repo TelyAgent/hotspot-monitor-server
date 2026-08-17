@@ -38,3 +38,15 @@ export interface TweetMetrics {
   reposts: number | null
   quotes: number | null
 }
+
+export interface TwitterUserInfo {
+  id: string
+  userName: string
+  name?: string
+}
+
+export interface TweetTimelinePage {
+  tweets: Tweet[]
+  hasNextPage: boolean
+  nextCursor: string | null
+}

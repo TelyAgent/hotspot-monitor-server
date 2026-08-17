@@ -6,7 +6,7 @@ import { SEED_SETTING_AUDIT, SEED_SETTINGS } from './settings.seed'
 const CATEGORY_DEFS = {
   connectors: { model: 'connector', columns: ['baseUrl', 'authMethod', 'syncFrequency', 'timeoutRetry', 'fallback'] },
   monitoring: { model: 'monitoringRule', columns: ['regions', 'threshold', 'compareWindow', 'action'] },
-  topics: { model: 'topic', columns: ['keywords', 'positiveExamples', 'negativeExamples', 'action'] },
+  topics: { model: 'topic', columns: ['keywords', 'positiveExamples', 'negativeExamples', 'action', 'accounts'] },
   accounts: { model: 'accountConfig', columns: ['xAccountId', 'type', 'skill', 'frequency', 'onFailure'] },
   product: { model: 'productConfig', columns: ['url', 'targetUsers', 'capability', 'forbidden', 'lastSync'] },
   risk: { model: 'riskRule', columns: ['rule', 'lowAction', 'midAction', 'highAction', 'afterRelease'] },

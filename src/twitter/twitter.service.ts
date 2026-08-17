@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { TrendsResult, Tweet, TweetMetrics, TwitterTrend } from './interfaces/twitter-trend.interface'
+import type {
+  TrendsResult,
+  Tweet,
+  TweetMetrics,
+  TweetTimelinePage,
+  TwitterTrend,
+  TwitterUserInfo,
+} from './interfaces/twitter-trend.interface'
 
 // 第三方热搜接口 twitterapi.io：GET /twitter/trends?woeid={woeid}&count={count}
 // 鉴权：X-API-Key 请求头
@@ -214,6 +221,62 @@ export class TwitterService {
       replies: tweet.replyCount ?? null,
       reposts: tweet.retweetCount ?? null,
       quotes: tweet.quoteCount ?? null,
+    }
+  }
+
+  /** 解析 X handle（可带 @）→ 数字 userId */
+  async getUserInfo(handle: string): Promise<TwitterUserInfo> {
+    if (!this.apiKey) throw new Error('TWITTERAPI_IO_KEY 未配置，无法获取用户信息')
+
+    const clean = handle.replace(/^@/, '')
+    const url = `${TWITTERAPI_BASE}/twitter/user/info?userName=${encodeURIComponent(clean)}`
+    const response = await fetch(url, { headers: { 'X-API-Key': this.apiKey } })
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`twitterapi.io 用户信息返回 ${response.status}: ${text.slice(0, 200)}`)
+    }
+
+    const body = (await response.json()) as {
+      data?: TwitterUserInfo
+      status?: string
+      msg?: string
+    }
+    if (body.status === 'error' || !body.data) {
+      throw new Error(`twitterapi.io 用户信息错误: ${body.msg || '未找到用户'}`)
+    }
+    return body.data
+  }
+
+  /** 拉取用户时间线（按 userId，支持游标翻页，按 created_at 倒序） */
+  async getUserTimeline(userId: string, cursor?: string): Promise<TweetTimelinePage> {
+    if (!this.apiKey) throw new Error('TWITTERAPI_IO_KEY 未配置，无法获取用户时间线')
+
+    const params = new URLSearchParams({ userId })
+    if (cursor) params.set('cursor', cursor)
+    const url = `${TWITTERAPI_BASE}/twitter/user/tweet_timeline?${params.toString()}`
+    const response = await fetch(url, { headers: { 'X-API-Key': this.apiKey } })
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`twitterapi.io 用户时间线返回 ${response.status}: ${text.slice(0, 200)}`)
+    }
+
+    const body = (await response.json()) as {
+      tweets?: Tweet[]
+      has_next_page?: boolean
+      next_cursor?: string | null
+      status?: string
+      msg?: string
+    }
+    if (body.status === 'error') {
+      throw new Error(`twitterapi.io 用户时间线错误: ${body.msg || '未知错误'}`)
+    }
+
+    return {
+      tweets: body.tweets ?? [],
+      hasNextPage: body.has_next_page ?? false,
+      nextCursor: body.next_cursor ?? null,
     }
   }
 }

@@ -49,6 +49,17 @@ export class TaskService {
   /** 对一次采集形成的 Event 做账号分配 + 候选生成 */
   async assignAndGenerate(snapshotId: string): Promise<number> {
     const events = await this.findSnapshotEvents(snapshotId)
+    return this.assignEvents(events)
+  }
+
+  /** 对单个 Event（如主题圈触发）做账号分配 + 候选生成 */
+  async assignAndGenerateForEvent(eventId: string): Promise<number> {
+    const event = await this.prisma.event.findUnique({ where: { id: eventId } })
+    if (!event) return 0
+    return this.assignEvents([event])
+  }
+
+  private async assignEvents(events: Event[]): Promise<number> {
     if (events.length === 0) return 0
 
     const accounts = await this.prisma.account.findMany()

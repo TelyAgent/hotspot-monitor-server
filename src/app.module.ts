@@ -12,6 +12,7 @@ import { TaskModule } from './task/task.module'
 import { InsightsModule } from './insights/insights.module'
 import { SettingsModule } from './settings/settings.module'
 import { FutureEventsModule } from './future-events/future-events.module'
+import { TopicCircleModule } from './topic-circle/topic-circle.module'
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FutureEventsModule } from './future-events/future-events.module'
     InsightsModule,
     SettingsModule,
     FutureEventsModule,
+    TopicCircleModule,
     MonitorModule,
   ],
   controllers: [AppController],
