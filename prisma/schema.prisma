@@ -160,3 +160,147 @@ model PostMetric {
 
   @@index([postId, capturedAt])
 }
+
+model Connector {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  baseUrl       String?
+  authMethod    String?
+  syncFrequency String?
+  timeoutRetry  String?
+  fallback      String?
+  enabled       Boolean  @default(true)
+  fields        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MonitoringRule {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  regions       String?
+  threshold     String?
+  compareWindow String?
+  action        String?
+  enabled       Boolean  @default(true)
+  fields        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Topic {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  description      String?
+  keywords         String?
+  positiveExamples String?
+  negativeExamples String?
+  action           String?
+  enabled          Boolean  @default(true)
+  fields           Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model AccountConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  xAccountId  String?
+  type        String?
+  skill       String?
+  frequency   String?
+  onFailure   String?
+  enabled     Boolean  @default(true)
+  fields      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  url         String?
+  targetUsers String?
+  capability  String?
+  forbidden   String?
+  lastSync    String?
+  enabled     Boolean  @default(true)
+  fields      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RiskRule {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  rule         String?
+  lowAction    String?
+  midAction    String?
+  highAction   String?
+  afterRelease String?
+  enabled      Boolean  @default(true)
+  fields       Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TrackingRule {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  timeRange   String?
+  value       String?
+  metrics     String?
+  onFailure   String?
+  goodExtend  String?
+  enabled     Boolean  @default(true)
+  fields      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FutureSource {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  url           String?
+  method        String?
+  evidenceLevel String?
+  syncFrequency String?
+  maxStale      String?
+  enabled       Boolean  @default(true)
+  fields        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Permission {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  description      String?
+  scope            String?
+  overridable      String?
+  effectiveOn      String?
+  auditRequirement String?
+  enabled          Boolean  @default(true)
+  fields           Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SettingAudit {
+  id        String   @id @default(cuid())
+  object    String
+  action    String
+  operator  String
+  version   String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

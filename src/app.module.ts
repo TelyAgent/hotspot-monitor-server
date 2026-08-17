@@ -10,6 +10,7 @@ import { MonitorModule } from './monitor/monitor.module'
 import { AccountModule } from './account/account.module'
 import { TaskModule } from './task/task.module'
 import { InsightsModule } from './insights/insights.module'
+import { SettingsModule } from './settings/settings.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { InsightsModule } from './insights/insights.module'
     AccountModule,
     TaskModule,
     InsightsModule,
+    SettingsModule,
     MonitorModule,
   ],
   controllers: [AppController],
