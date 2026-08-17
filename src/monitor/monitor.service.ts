@@ -103,18 +103,17 @@ export class MonitorService implements OnModuleInit {
       }),
     )
 
-    // 5 个地区快照都到齐后，聚合触发判断一次
-    const triggered = await this.triggerService.evaluate(snapshotId)
-    if (triggered > 0) {
-      this.logger.log(`本次采集命中 ${triggered} 条触发信号`)
-      // 事件形成 → 关联 → 任务分配 → 候选生成：异步后台执行，不阻塞采集返回
-      void this.runEventPipeline(snapshotId)
-    }
+    // 触发判断 + 事件流水线：异步后台执行，采集接口秒回
+    void this.runPipeline(snapshotId)
   }
 
-  /** 事件流水线：形成/关联/分配/生成，异步后台执行（避免阻塞采集接口） */
-  private async runEventPipeline(snapshotId: string): Promise<void> {
+  /** 触发判断 + 事件流水线：形成/关联/分配/生成，异步后台执行 */
+  private async runPipeline(snapshotId: string): Promise<void> {
     try {
+      const triggered = await this.triggerService.evaluate(snapshotId)
+      if (triggered === 0) return
+      this.logger.log(`本次采集命中 ${triggered} 条触发信号`)
+
       await this.eventService.formEvents(snapshotId)
       await this.eventService.relateEvents(snapshotId)
       await this.taskService.assignAndGenerate(snapshotId)
