@@ -304,3 +304,36 @@ model SettingAudit {
 
   @@index([createdAt])
 }
+
+model FutureEvent {
+  id                 String    @id @default(cuid())
+  title              String
+  subject            String
+  eventType          String
+  factTime           DateTime?
+  timezone           String    @default("UTC")
+  schedulePrecision  String
+  confirmationLevel  String
+  expressionBoundary String
+  actionScore        Json
+  evidence           Json
+  windows            Json
+  heat               Json
+  relatedEventId     String?
+  entryMode          String?
+  ruleVersion        String    @default("v1")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([factTime])
+}
+
+model FutureSourceStatus {
+  id         String    @id @default(cuid())
+  source     String    @unique
+  enabled    Boolean   @default(true)
+  lastSyncAt DateTime?
+  status     String
+  nextSyncAt DateTime?
+  message    String?
+}

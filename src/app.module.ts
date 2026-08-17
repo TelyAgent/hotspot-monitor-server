@@ -11,6 +11,7 @@ import { AccountModule } from './account/account.module'
 import { TaskModule } from './task/task.module'
 import { InsightsModule } from './insights/insights.module'
 import { SettingsModule } from './settings/settings.module'
+import { FutureEventsModule } from './future-events/future-events.module'
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SettingsModule } from './settings/settings.module'
     TaskModule,
     InsightsModule,
     SettingsModule,
+    FutureEventsModule,
     MonitorModule,
   ],
   controllers: [AppController],
