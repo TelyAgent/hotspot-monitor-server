@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { LlmService } from '../llm/llm.service'
-import type { Account, Event } from '@prisma/client'
+import { Prisma } from '@prisma/client'
+import type { Account, Event, Task } from '@prisma/client'
+import { TaskQueryDto } from './dto/task-query.dto'
 
 const PARTICIPATE_SYSTEM_PROMPT = `你是账号响应判断助手。给定一个事件和一批人设账号（每个账号有定位和人设），判断哪些账号应该参与响应这个事件。只有事件明显匹配账号定位才参与，否则跳过。
 
@@ -94,13 +96,59 @@ export class TaskService {
     return created.length
   }
 
-  /** 查询任务列表（含 event/account 关联） */
-  async getTasks() {
-    const tasks = await this.prisma.task.findMany({
-      include: { event: true, account: true },
-      orderBy: { createdAt: 'desc' },
-    })
-    return tasks.map((t) => ({
+  /** 查询任务列表（分页 + 服务端筛选） */
+  async getTasks(query: TaskQueryDto) {
+    const { page, pageSize, event, role, status, risk } = query
+    const where: Prisma.TaskWhereInput = {}
+    if (event) where.event = { title: event }
+    if (role) where.account = { type: role }
+    if (status) where.status = status
+    if (risk) where.risk = risk
+
+    const [total, tasks] = await this.prisma.$transaction([
+      this.prisma.task.count({ where }),
+      this.prisma.task.findMany({
+        where,
+        include: { event: true, account: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ])
+
+    return {
+      items: tasks.map((t) => this.toItem(t)),
+      total,
+      page,
+      pageSize,
+    }
+  }
+
+  /** 筛选下拉选项：去重的事件标题 / 状态 / 风险 */
+  async getFacets() {
+    const [eventIdRows, statusRows, riskRows] = await Promise.all([
+      this.prisma.task.findMany({ distinct: ['eventId'], select: { eventId: true } }),
+      this.prisma.task.findMany({ distinct: ['status'], select: { status: true } }),
+      this.prisma.task.findMany({ distinct: ['risk'], select: { risk: true } }),
+    ])
+
+    const eventIds = eventIdRows.map((r) => r.eventId)
+    const events = eventIds.length
+      ? await this.prisma.event.findMany({
+          where: { id: { in: eventIds } },
+          select: { title: true },
+        })
+      : []
+
+    return {
+      events: [...new Set(events.map((e) => e.title))],
+      statuses: [...new Set(statusRows.map((r) => r.status))],
+      risks: [...new Set(riskRows.map((r) => r.risk))],
+    }
+  }
+
+  private toItem(t: Task & { event: Event; account: Account }) {
+    return {
       id: t.id,
       code: t.code,
       eventId: t.eventId,
@@ -111,7 +159,7 @@ export class TaskService {
       risk: t.risk,
       time: formatTime(t.createdAt),
       copies: (t.candidates as string[] | null) ?? [],
-    }))
+    }
   }
 
   private async findSnapshotEvents(snapshotId: string): Promise<Event[]> {

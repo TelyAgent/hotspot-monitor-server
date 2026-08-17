@@ -19,6 +19,17 @@ model TrendingRecord {
   @@index([region, collectedAt])
 }
 
+// 采集行为记录：每个地区每次采集只记一行（真实调用 / 回退 mock），用于 2 小时节流与费用基线
+model TrendFetchLog {
+  id        String   @id @default(cuid())
+  region    String
+  source    String
+  count     Int      @default(0)
+  fetchedAt DateTime @default(now())
+
+  @@index([region, fetchedAt])
+}
+
 model Signal {
   id           String   @id @default(cuid())
   source       String

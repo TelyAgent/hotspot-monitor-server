@@ -4,13 +4,16 @@ import { LlmService } from '../llm/llm.service'
 import { EmbeddingService } from '../embedding/embedding.service'
 import { TwitterService } from '../twitter/twitter.service'
 import type { Tweet } from '../twitter/interfaces/twitter-trend.interface'
+import { Prisma } from '@prisma/client'
 import type { Signal } from '@prisma/client'
 import type {
   EventFormation,
   EventItem,
+  EventListResponse,
   RelationInput,
   RelationResult,
 } from './event.types'
+import { EventQueryDto } from './dto/event-query.dto'
 
 const MERGE_SIMILARITY_THRESHOLD = 0.9
 const EVIDENCE_POSTS_PER_TITLE = 3
@@ -337,17 +340,46 @@ export class EventService {
     }
   }
 
-  /** 查询所有 Event，映射为前端 EventItem 结构 */
-  async getEvents(): Promise<EventItem[]> {
-    const events = await this.prisma.event.findMany({
-      include: {
-        evidence: { orderBy: { order: 'asc' } },
-        outgoingRelations: { include: { to: true } },
-      },
-      orderBy: { firstDiscoveredAt: 'desc' },
-    })
+  /** 查询 Event（分页 + 状态筛选 + 关键词搜索），映射为前端 EventItem 结构 */
+  async getEvents(query: EventQueryDto): Promise<EventListResponse> {
+    const { page, pageSize, status, q } = query
+    const where: Prisma.EventWhereInput = {}
+    if (status) where.status = status
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { summary: { contains: q, mode: 'insensitive' } },
+      ]
+    }
 
-    return events.map((e) => ({
+    const [total, events] = await this.prisma.$transaction([
+      this.prisma.event.count({ where }),
+      this.prisma.event.findMany({
+        where,
+        include: {
+          evidence: { orderBy: { order: 'asc' } },
+          outgoingRelations: { include: { to: true } },
+        },
+        orderBy: { firstDiscoveredAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ])
+
+    return {
+      items: events.map((e) => this.toItem(e)),
+      total,
+      page,
+      pageSize,
+    }
+  }
+
+  private toItem(
+    e: Prisma.EventGetPayload<{
+      include: { evidence: true; outgoingRelations: { include: { to: true } } }
+    }>,
+  ): EventItem {
+    return {
       id: e.id,
       title: e.title,
       summary: e.summary,
@@ -359,7 +391,7 @@ export class EventService {
       related: e.outgoingRelations.map(
         (r) => `${r.relationType} · ${r.to.title}`,
       ),
-    }))
+    }
   }
 }
 

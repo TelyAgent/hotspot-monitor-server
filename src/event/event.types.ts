@@ -38,3 +38,10 @@ export interface EventItem {
   urls: string[]
   related: string[]
 }
+
+export interface EventListResponse {
+  items: EventItem[]
+  total: number
+  page: number
+  pageSize: number
+}
