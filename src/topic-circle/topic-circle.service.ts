@@ -407,7 +407,13 @@ export class TopicCircleService {
     const handle = rawHandle.replace(/^@/, '')
 
     const state = await this.prisma.topicCircleSyncState.findUnique({ where: { handle } })
-    const since = state
+    const hasStoredPosts = Boolean(
+      await this.prisma.topicCirclePost.findFirst({
+        where: { handle, circle },
+        select: { id: true },
+      }),
+    )
+    const since = state && hasStoredPosts
       ? new Date(state.lastCollectedAt.getTime() - OVERLAP_MS)
       : new Date(Date.now() - FIRST_COLLECT_WINDOW_MS)
 

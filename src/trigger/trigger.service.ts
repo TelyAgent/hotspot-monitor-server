@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { LlmService } from '../llm/llm.service'
 import type { Signal } from '@prisma/client'
+import { matchTrendingTopic } from './topic-keyword-match'
 
 const CROSS_REGION_PROMPT = `你是跨区异动判断助手。给定一批热搜信号（含标题和地区），把描述同一具体事件的信号分组。
 同一事件可能在不同地区用不同标题或语言表达，但核心事实相同就算同一组；不相关的事件不要分到一组。
@@ -20,8 +21,7 @@ export class TriggerService {
 
   /**
    * 对一次完整采集（snapshotId）做触发判断，命中后写回 Signal.trigger。
-   * TR-01 前5 / TR-02 上升10位 / TR-04 跨区异动；
-   * TR-03 重点主题为语义匹配，随批量 LLM 事件形成一并实现。
+   * TR-01 前5 / TR-02 上升10位 / TR-03 重点主题热搜 / TR-04 跨区异动。
    */
   async evaluate(snapshotId: string): Promise<number> {
     const signals = await this.prisma.signal.findMany({
@@ -30,6 +30,15 @@ export class TriggerService {
     if (signals.length === 0) return 0
 
     const prevRankMap = await this.loadPreviousRankMap(snapshotId)
+    const topicConfigs = await this.prisma.topic.findMany({
+      where: { enabled: true },
+      select: {
+        name: true,
+        keywords: true,
+        positiveExamples: true,
+        negativeExamples: true,
+      },
+    })
 
     const triggerMap = new Map<string, string[]>()
 
@@ -45,6 +54,11 @@ export class TriggerService {
       // TR-02 上升 10 位（上一快照排名 - 当前排名 >= 10）
       if (prevRank != null && s.rank != null && prevRank - s.rank >= 10) {
         triggers.push('TR-02')
+      }
+
+      // TR-03 已配置重点主题或关键词进入任意已采集地区热搜榜
+      if (matchTrendingTopic(s.title, topicConfigs)) {
+        triggers.push('TR-03')
       }
 
       if (triggers.length) triggerMap.set(s.id, triggers)

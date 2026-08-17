@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { SEED_SETTING_AUDIT, SEED_SETTINGS } from './settings.seed'
+import { TOPIC_SEMANTIC_DEFAULTS } from './topic-semantics'
 
 /** 各分区 → Prisma 模型名 + 可写列的映射（键即前端字段名，值为模型列名） */
 const CATEGORY_DEFS = {
@@ -42,6 +43,7 @@ export class SettingsService implements OnModuleInit {
 
   async onModuleInit() {
     await this.seedIfEmpty()
+    await this.backfillTopicSemantics()
   }
 
   /** 查询某分区：audit 返回审计记录，其余返回对应类型化表 */
@@ -135,5 +137,37 @@ export class SettingsService implements OnModuleInit {
     }
 
     if (seeded > 0) this.logger.log(`设置已初始化：${seeded} 条记录`)
+  }
+
+  /** 既有数据库不重新 seed，启动时补齐五个默认主题缺失的语义配置 */
+  private async backfillTopicSemantics() {
+    let updated = 0
+    for (const [name, defaults] of Object.entries(TOPIC_SEMANTIC_DEFAULTS)) {
+      const topic = await this.prisma.topic.findUnique({
+        where: { name },
+        select: {
+          id: true,
+          keywords: true,
+          positiveExamples: true,
+          negativeExamples: true,
+        },
+      })
+      if (!topic) continue
+
+      const data = {
+        ...(topic.keywords ? {} : { keywords: defaults.keywords }),
+        ...(topic.positiveExamples
+          ? {}
+          : { positiveExamples: defaults.positiveExamples }),
+        ...(topic.negativeExamples
+          ? {}
+          : { negativeExamples: defaults.negativeExamples }),
+      }
+      if (Object.keys(data).length === 0) continue
+
+      await this.prisma.topic.update({ where: { id: topic.id }, data })
+      updated++
+    }
+    if (updated > 0) this.logger.log(`主题语义配置已补齐：${updated} 个主题`)
   }
 }

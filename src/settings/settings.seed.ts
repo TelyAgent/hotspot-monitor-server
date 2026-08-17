@@ -1,5 +1,7 @@
 // 各设置分区的初始数据：按「每分区一张类型化表」建模，
 // 键即对应 Prisma 模型的列名；无法落到专列的参数值放入 fields JSON。
+import { TOPIC_SEMANTIC_DEFAULTS } from './topic-semantics'
+
 export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
   connectors: [
     {
@@ -73,6 +75,7 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
       name: '政治与选举',
       description: '英语世界政治为主，重点覆盖美国选举与全球重大政治事件',
       enabled: true,
+      ...TOPIC_SEMANTIC_DEFAULTS['政治与选举'],
       accounts:
         '@Reuters\n@AP\n@CNNPolitics\n@POLITICO\n@axios\n@thehill\n@nprpolitics\n@BBCWorld\n@DecisionDeskHQ\n@NateSilver538',
     },
@@ -80,6 +83,7 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
       name: 'Crypto 与 Web3',
       description: '加密与 Web3 行业动态',
       enabled: true,
+      ...TOPIC_SEMANTIC_DEFAULTS['Crypto 与 Web3'],
       accounts:
         '@CoinDesk\n@Cointelegraph\n@crypto\n@WuBlockchain\n@tier10k\n@WatcherGuru\n@lookonchain\n@BitcoinMagazine\n@DecryptMedia\n@DefiLlama',
     },
@@ -87,6 +91,7 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
       name: 'AI 与科技',
       description: 'AI 与科技行业动态',
       enabled: true,
+      ...TOPIC_SEMANTIC_DEFAULTS['AI 与科技'],
       accounts:
         '@OpenAI\n@AnthropicAI\n@GoogleDeepMind\n@AIatMeta\n@huggingface\n@AndrewYNg\n@karpathy\n@TechCrunch\n@verge\n@WIRED',
     },
@@ -94,6 +99,7 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
       name: '宏观经济与金融',
       description: '宏观数据、政策与金融市场',
       enabled: true,
+      ...TOPIC_SEMANTIC_DEFAULTS['宏观经济与金融'],
       accounts:
         '@business\n@ReutersBiz\n@CNBC\n@FinancialTimes\n@WSJ\n@TheEconomist\n@federalreserve\n@BLS_gov\n@KobeissiLetter\n@DeItaone',
     },
@@ -101,6 +107,7 @@ export const SEED_SETTINGS: Record<string, Record<string, unknown>[]> = {
       name: '预测市场行业',
       description: '预测市场平台产品、监管、融资与市场动态',
       enabled: true,
+      ...TOPIC_SEMANTIC_DEFAULTS['预测市场行业'],
       accounts:
         '@Polymarket\n@Kalshi\n@PolymarketIntel\n@OpinionLabsXYZ\n@MyriadMarkets\n@PredictIt\n@ZeitgeistPM\n@PredictInsights\n@ManifoldMarkets\n@metaculus',
     },

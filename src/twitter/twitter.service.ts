@@ -264,6 +264,7 @@ export class TwitterService {
 
     const body = (await response.json()) as {
       tweets?: Tweet[]
+      data?: Tweet[] | { tweets?: Tweet[] }
       has_next_page?: boolean
       next_cursor?: string | null
       status?: string
@@ -273,8 +274,16 @@ export class TwitterService {
       throw new Error(`twitterapi.io 用户时间线错误: ${body.msg || '未知错误'}`)
     }
 
+    const tweets = Array.isArray(body.tweets)
+      ? body.tweets
+      : Array.isArray(body.data)
+        ? body.data
+        : Array.isArray(body.data?.tweets)
+          ? body.data.tweets
+          : []
+
     return {
-      tweets: body.tweets ?? [],
+      tweets,
       hasNextPage: body.has_next_page ?? false,
       nextCursor: body.next_cursor ?? null,
     }
